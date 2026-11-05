@@ -1,0 +1,16 @@
+---
+name: "geckyzz"
+guid: "36bc6c0a-f85b-46c8-ae04-0d67a454d217"
+version: "1.0.0.0"
+targetAbi: "12.4.0.0"
+framework: "net10.0"
+overview: "Adds direct links to geckyzz and mapped anime database pages."
+description: >
+  Adds geckyzz links and direct external links for available anime database
+  mappings on movies, series, and seasons.
+category: "General"
+owner: "geckyzz"
+artifacts:
+  - "Jellyfin.Plugin.Geckyzz.dll"
+changelog: >
+  Initial build.
