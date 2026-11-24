@@ -65,8 +65,8 @@ jobs:
         run: |
           ARTIFACT="${{ steps.jprm.outputs.artifact }}"
           FILENAME=$(basename "$ARTIFACT")
-          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
-          export TAG VERSION DOWNLOAD_URL
+          SOURCE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
+          export TAG VERSION ARTIFACT SOURCE_URL
           pwsh -NoProfile -NonInteractive .github/scripts/update_manifest.ps1
 
       - name: Append targetAbi to manifest

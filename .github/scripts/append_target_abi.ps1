@@ -50,7 +50,9 @@ $CsProjPath = Join-Path $RepoRoot "Jellyfin.Plugin.Geckyzz" "Jellyfin.Plugin.Gec
 
 $TargetAbi = Get-TargetAbi -CsProjPath $CsProjPath
 
-$Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+# ConvertFrom-Json unwraps a single-element JSON array to the element itself;
+# keep the manifest as an array (PackageInfo[]) when writing it back.
+$Manifest = @(Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json)
 $Plugin = $Manifest[0]
 
 $Versions = @($Plugin.versions | Where-Object { $_ })
@@ -67,7 +69,9 @@ if ($Latest.targetAbi) {
 
 $Latest | Add-Member -MemberType NoteProperty -Name targetAbi -Value $TargetAbi -Force
 
-$Json = $Manifest | ConvertTo-Json -Depth 10
+# Use -InputObject instead of piping to ConvertTo-Json to prevent PowerShell
+# from unrolling the single-element $Manifest array into an object.
+$Json = ConvertTo-Json -InputObject $Manifest -Depth 10
 $Json = $Json.TrimEnd() + "`n"
 Set-Content -LiteralPath $ManifestPath -Value $Json -Encoding UTF8 -NoNewline
 

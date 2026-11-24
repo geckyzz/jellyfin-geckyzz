@@ -12,7 +12,8 @@
         "version": "1.1.0.0",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://github.com/geckyzz/jellyfin-geckyzz/releases/download/v1.1.0.0/geckyzz_1.1.0.0.zip",
-        "checksum": "7692444ef0c1d2cee9fbf4bacfbc5d97"
+        "checksum": "7692444ef0c1d2cee9fbf4bacfbc5d97",
+        "timestamp": "2026-11-24T05:21:32Z"
       },
       {
         "version": "1.0.0.0",
