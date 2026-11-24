@@ -1,0 +1,94 @@
+name: Release plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build Jellyfin Plugin
+        uses: oddstr13/jellyfin-plugin-repository-manager@v1.1.1
+        id: jprm
+        with:
+          path: './Jellyfin.Plugin.Geckyzz'
+          dotnet-target: 'net10.0'
+          dotnet-config: 'Release'
+          max-cpu-count: '1'
+          verbosity: 'debug'
+
+      - name: Get tag and version
+        id: vars
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.vars.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ steps.vars.outputs.tag }}" \
+            --notes "Release ${{ steps.vars.outputs.tag }}" \
+            --draft=false --prerelease=false
+
+      - name: Upload Release Asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ steps.vars.outputs.tag }}" \
+            "${{ steps.jprm.outputs.artifact }}" \
+            --repo "${{ github.repository }}"
+
+      - name: Update manifest.json
+        env:
+          TAG: ${{ steps.vars.outputs.tag }}
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          ARTIFACT="${{ steps.jprm.outputs.artifact }}"
+          FILENAME=$(basename "$ARTIFACT")
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
+
+          python3 -c "
+import json
+manifest_path = 'manifest.json'
+with open(manifest_path) as f:
+    manifest = json.load(f)
+plugin = manifest[0]
+plugin['versions'] = [v for v in plugin['versions'] if v.get('version') != '${VERSION}']
+plugin['versions'].append({
+    'version': '${VERSION}',
+    'downloadUrl': '${DOWNLOAD_URL}'
+})
+plugin['versions'].sort(key=lambda v: [int(x) for x in v['version'].split('.')], reverse=True)
+with open(manifest_path, 'w') as f:
+    json.dump(manifest, f, indent=2)
+    f.write('\n')
+"
+
+      - name: Commit and push manifest
+        run: |
+          git config user.name "geckyzz"
+          git config user.email "gecko.geckyzz@proton.me"
+          git checkout main
+          git add manifest.json
+          git commit -m "chore: add ${{ steps.vars.outputs.tag }} to manifest" || echo "nothing to commit"
+          git push origin main
