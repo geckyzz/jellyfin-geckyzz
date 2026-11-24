@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Append targetAbi to the latest version entry in manifest.json."""
-from pathlib import Path
+
 import json
 import re
 import sys
+from pathlib import Path
 
 
 def get_target_abi(csproj_path: Path) -> str:
@@ -25,7 +26,9 @@ def get_target_abi(csproj_path: Path) -> str:
 def main() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     manifest_path = repo_root / "manifest.json"
-    csproj_path = repo_root / "Jellyfin.Plugin.Geckyzz" / "Jellyfin.Plugin.Geckyzz.csproj"
+    csproj_path = (
+        repo_root / "Jellyfin.Plugin.Geckyzz" / "Jellyfin.Plugin.Geckyzz.csproj"
+    )
 
     target_abi = get_target_abi(csproj_path)
 
@@ -39,7 +42,9 @@ def main() -> None:
 
     latest = versions[0]
     if latest.get("targetAbi"):
-        print(f"targetAbi already set for version {latest.get('version')}: {latest['targetAbi']}")
+        print(
+            f"targetAbi already set for version {latest.get('version')}: {latest['targetAbi']}"
+        )
         return
 
     latest["targetAbi"] = target_abi
