@@ -6,6 +6,15 @@
     "description": "Adds external links for Jellyfin movies, series, and seasons. Uses TMDB IDs, with a MyAnimeList ID fallback, and selects the fsanime route when matching fansub release filenames are found.",
     "owner": "geckyzz",
     "category": "General",
-    "versions": []
+    "imageUrl": "https://raw.githubusercontent.com/geckyzz/jellyfin-geckyzz/main/Thumbnail.png",
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/geckyzz/jellyfin-geckyzz/archive/refs/heads/main.zip",
+        "checksum": "16f692851769f537a7639773a8a6b461",
+        "timestamp": "2026-11-24T05:00:00Z"
+      }
+    ]
   }
 ]
