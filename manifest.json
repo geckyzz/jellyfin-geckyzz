@@ -9,6 +9,13 @@
     "imageUrl": "https://raw.githubusercontent.com/geckyzz/jellyfin-geckyzz/main/Thumbnail.png",
     "versions": [
       {
+        "version": "1.2.0.0",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/geckyzz/jellyfin-geckyzz/releases/download/v1.2.0.0/geckyzz_1.2.0.0.zip",
+        "checksum": "459bf4cb474c6eba756d083ee897eb2e",
+        "timestamp": "2026-11-24T06:59:03Z"
+      },
+      {
         "version": "1.1.1.0",
         "targetAbi": "12.4.0.0",
         "sourceUrl": "https://github.com/geckyzz/jellyfin-geckyzz/releases/download/v1.1.1.0/geckyzz_1.1.1.0.zip",
