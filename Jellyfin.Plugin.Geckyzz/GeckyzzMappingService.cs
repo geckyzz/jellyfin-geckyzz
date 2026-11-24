@@ -94,6 +94,7 @@ public sealed class GeckyzzMappingService
             case Series:
                 mediaType = "tv";
                 idSource = item;
+                seasonNumber = 1;
                 break;
             case Season season:
                 mediaType = "tv";
@@ -123,9 +124,9 @@ public sealed class GeckyzzMappingService
         }
 
         var source = isTmdbId ? $"tmdb/{mediaType}/{itemId}" : $"mal/{itemId}";
-        if (seasonNumber is >= 0)
+        if (isTmdbId && seasonNumber is >= 0)
         {
-            source += $"/season/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
+            source += $"/seasons/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
         }
 
         path = source;

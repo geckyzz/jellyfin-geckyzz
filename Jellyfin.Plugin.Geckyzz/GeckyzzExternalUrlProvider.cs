@@ -82,18 +82,28 @@ public sealed class GeckyzzExternalUrlProvider : IExternalUrlProvider
         }
 
         var mapping = _mappingService.GetMapping(item);
-        var path = mapping?.GeckyzzPath;
-        if (string.IsNullOrWhiteSpace(path))
+        var path = string.IsNullOrWhiteSpace(mapping?.GeckyzzPath)
+            ? BuildPath(itemId, mediaType, seasonNumber)
+            : mapping.GeckyzzPath;
+
+        if (item is Series && path.EndsWith("/season/1", StringComparison.Ordinal))
         {
-            path = $"{mediaType}/{Uri.EscapeDataString(itemId)}";
-            if (seasonNumber.HasValue && seasonNumber.Value >= 0)
-            {
-                path += $"/season/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
-            }
+            path = path[..^"/season/1".Length];
         }
 
         var pageType = HasFansubRelease(item) ? "fsanime" : "anime";
         return new[] { $"{BaseUrl}/{pageType}/{path}" };
+    }
+
+    private static string BuildPath(string itemId, string mediaType, int? seasonNumber)
+    {
+        var path = $"{mediaType}/{Uri.EscapeDataString(itemId)}";
+        if (seasonNumber is >= 0)
+        {
+            path += $"/season/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        return path;
     }
 
     private static bool TryGetId(BaseItem item, out string itemId)
