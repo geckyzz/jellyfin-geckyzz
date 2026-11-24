@@ -1,20 +1,23 @@
-[
-  {
-    "guid": "36bc6c0a-f85b-46c8-ae04-0d67a454d217",
-    "name": "geckyzz",
-    "overview": "Adds links to anime pages on geckyzz.my.id.",
-    "description": "Adds external links for Jellyfin movies, series, and seasons. Uses TMDB IDs, with a MyAnimeList ID fallback, and selects the fsanime route when matching fansub release filenames are found.",
-    "owner": "geckyzz",
-    "category": "General",
-    "imageUrl": "https://raw.githubusercontent.com/geckyzz/jellyfin-geckyzz/main/Thumbnail.png",
-    "versions": [
-      {
-        "version": "1.0.0.0",
-        "targetAbi": "12.4.0.0",
-        "sourceUrl": "https://github.com/geckyzz/jellyfin-geckyzz/releases/download/v1.0.0/geckyzz_1.0.0.0.zip",
-        "checksum": "15d48f3dc8156a8f89976a3534a1adc6",
-        "timestamp": "2026-11-24T05:00:00Z"
-      }
-    ]
-  }
-]
+{
+  "guid": "36bc6c0a-f85b-46c8-ae04-0d67a454d217",
+  "name": "geckyzz",
+  "overview": "Adds links to anime pages on geckyzz.my.id.",
+  "description": "Adds external links for Jellyfin movies, series, and seasons. Uses TMDB IDs, with a MyAnimeList ID fallback, and selects the fsanime route when matching fansub release filenames are found.",
+  "owner": "geckyzz",
+  "category": "General",
+  "imageUrl": "https://raw.githubusercontent.com/geckyzz/jellyfin-geckyzz/main/Thumbnail.png",
+  "versions": [
+    {
+      "version": "1.1.0.0",
+      "downloadUrl": "https://github.com/geckyzz/jellyfin-geckyzz/releases/download/v1.1.0.0/geckyzz_1.1.0.0.zip",
+      "targetAbi": "12.4.0.0"
+    },
+    {
+      "version": "1.0.0.0",
+      "targetAbi": "12.4.0.0",
+      "sourceUrl": "https://github.com/geckyzz/jellyfin-geckyzz/releases/download/v1.0.0/geckyzz_1.0.0.0.zip",
+      "checksum": "15d48f3dc8156a8f89976a3534a1adc6",
+      "timestamp": "2026-11-24T05:00:00Z"
+    }
+  ]
+}
