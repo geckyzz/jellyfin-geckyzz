@@ -50,8 +50,7 @@ public abstract class MappedExternalUrlProvider : IExternalUrlProvider
         var mapping = _mappingService.GetMapping(item);
         if (mapping is null
             || !_hasTarget(mapping)
-            || HasNativeExternalLink(item)
-            || _target == "simkl" && item is Series && mapping.AniDbId is not null)
+            || HasNativeExternalLink(item))
         {
             return Array.Empty<string>();
         }
@@ -346,7 +345,7 @@ public sealed class SimklExternalUrlProvider : MappedExternalUrlProvider
 {
     /// <summary>Initializes the provider.</summary>
     public SimklExternalUrlProvider(GeckyzzMappingService service)
-        : base(service, "simkl", "Simkl", mapping => mapping.SimklId is > 0) { }
+        : base(service, "simkl", "Simkl", mapping => mapping.SimklId is > 0 && mapping.AniDbId is > 0) { }
 }
 
 /// <summary>Provides TMDB links.</summary>
