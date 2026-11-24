@@ -78,7 +78,10 @@ public abstract class MappedExternalUrlProvider : IExternalUrlProvider
     {
         var providerId = _target switch
         {
+            "anidb" => "AniDB",
+            "anilist" => "AniList",
             "imdb" => "Imdb",
+            "myanimelist" => "MyAnimeList",
             "themoviedb" => "Tmdb",
             "thetvdb" => "Tvdb",
             "trakt" => "Trakt",
@@ -90,13 +93,31 @@ public abstract class MappedExternalUrlProvider : IExternalUrlProvider
             return false;
         }
 
-        if (item.ProviderIds.ContainsKey(providerId))
+        if (ContainsProviderId(item, providerId))
         {
             return true;
         }
 
         return item is Season { Series: not null } season
-            && season.Series.ProviderIds.ContainsKey(providerId);
+            && ContainsProviderId(season.Series, providerId);
+    }
+
+    private static bool ContainsProviderId(BaseItem item, string providerId)
+    {
+        foreach (var key in item.ProviderIds.Keys)
+        {
+            if (string.Equals(key, providerId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (providerId == "MyAnimeList" && string.Equals(key, "MAL", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private string? BuildUrl(BaseItem item, GeckyzzMapping mapping)

@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -12,8 +15,13 @@ namespace Jellyfin.Plugin.Geckyzz;
 /// <summary>
 /// Retrieves and caches external identifier mappings from the geckyzz API.
 /// </summary>
-public sealed class GeckyzzMappingService
+public sealed partial class GeckyzzMappingService
 {
+    private static readonly string[] TmdbKeys = ["Tmdb", "TheMovieDb"];
+    private static readonly string[] MalKeys = ["MyAnimeList", "MAL"];
+    private static readonly string[] AniListKeys = ["AniList", "Al"];
+    private static readonly string[] AniDbKeys = ["AniDB", "anidb.net", "Aid"];
+
     private static readonly HttpClient HttpClient = new()
     {
         Timeout = TimeSpan.FromSeconds(5)
@@ -39,47 +47,68 @@ public sealed class GeckyzzMappingService
     /// <returns>The mapping, if one is available.</returns>
     public GeckyzzMapping? GetMapping(BaseItem item)
     {
-        if (!TryGetMappingPath(item, out var path))
+        var candidatePaths = GetCandidateMappingPaths(item);
+        if (candidatePaths.Count == 0)
         {
             return null;
         }
 
         var now = DateTimeOffset.UtcNow;
-        if (Cache.TryGetValue(path, out var cached) && cached.ExpiresAt > now)
+
+        // Check if any candidate has a valid cached mapping
+        foreach (var path in candidatePaths)
         {
-            return cached.Mapping;
+            if (Cache.TryGetValue(path, out var cached) && cached.ExpiresAt > now && cached.Mapping is not null)
+            {
+                return cached.Mapping;
+            }
         }
 
-        GeckyzzMapping? mapping = null;
-        try
+        // Try candidates in order
+        foreach (var path in candidatePaths)
         {
-            var json = HttpClient.GetStringAsync($"https://geckyzz.my.id/api/mappings/{path}")
-                .GetAwaiter()
-                .GetResult();
-            mapping = JsonSerializer.Deserialize<GeckyzzMapping>(json);
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            _logger.LogDebug("No geckyzz mapping exists for item {ItemId}", item.Id);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogWarning(ex, "Unable to retrieve geckyzz mappings for item {ItemId}", item.Id);
-        }
-        catch (TaskCanceledException ex)
-        {
-            _logger.LogWarning(ex, "Timed out retrieving geckyzz mappings for item {ItemId}", item.Id);
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Unable to parse geckyzz mappings for item {ItemId}", item.Id);
+            if (Cache.TryGetValue(path, out var cached) && cached.ExpiresAt > now && cached.Mapping is null)
+            {
+                continue;
+            }
+
+            GeckyzzMapping? mapping = null;
+            try
+            {
+                var json = HttpClient.GetStringAsync($"https://geckyzz.my.id/api/mappings/{path}")
+                    .GetAwaiter()
+                    .GetResult();
+                mapping = JsonSerializer.Deserialize<GeckyzzMapping>(json);
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogDebug("No geckyzz mapping exists for path {Path} (item {ItemId})", path, item.Id);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning(ex, "Unable to retrieve geckyzz mappings for path {Path} (item {ItemId})", path, item.Id);
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogWarning(ex, "Timed out retrieving geckyzz mappings for path {Path} (item {ItemId})", path, item.Id);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Unable to parse geckyzz mappings for path {Path} (item {ItemId})", path, item.Id);
+            }
+
+            Cache[path] = new CachedMapping(mapping, now + CacheDuration);
+
+            if (mapping is not null)
+            {
+                return mapping;
+            }
         }
 
-        Cache[path] = new CachedMapping(mapping, now + CacheDuration);
-        return mapping;
+        return null;
     }
 
-    private static bool TryGetMappingPath(BaseItem item, out string path)
+    private static List<string> GetCandidateMappingPaths(BaseItem item)
     {
         string mediaType;
         BaseItem idSource;
@@ -102,50 +131,120 @@ public sealed class GeckyzzMappingService
                 seasonNumber = season.IndexNumber;
                 break;
             default:
-                path = string.Empty;
-                return false;
+                return [];
         }
 
-        var isTmdbId = TryGetNumericProviderId(idSource, "Tmdb", out var itemId);
-        if (!isTmdbId && !ReferenceEquals(idSource, item))
+        var paths = new List<string>(4);
+
+        if (TryGetIdentifier(idSource, item, TmdbKeys, TmdbPathRegex(), out var tmdbId))
         {
-            isTmdbId = TryGetNumericProviderId(item, "Tmdb", out itemId);
+            var tmdbPath = $"tmdb/{mediaType}/{tmdbId}";
+            if (seasonNumber is >= 0)
+            {
+                tmdbPath += $"/seasons/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            paths.Add(tmdbPath);
         }
 
-        if (!isTmdbId
-            && !TryGetNumericProviderId(idSource, "MyAnimeList", out itemId)
-            && !TryGetNumericProviderId(idSource, "MAL", out itemId)
-            && (ReferenceEquals(idSource, item)
-                || !TryGetNumericProviderId(item, "MyAnimeList", out itemId)
-                    && !TryGetNumericProviderId(item, "MAL", out itemId)))
+        if (TryGetIdentifier(idSource, item, MalKeys, MalPathRegex(), out var malId))
         {
-            path = string.Empty;
-            return false;
+            paths.Add($"mal/{malId}");
         }
 
-        var source = isTmdbId ? $"tmdb/{mediaType}/{itemId}" : $"mal/{itemId}";
-        if (isTmdbId && seasonNumber is >= 0)
+        if (TryGetIdentifier(idSource, item, AniListKeys, AniListPathRegex(), out var aniListId))
         {
-            source += $"/seasons/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
+            paths.Add($"anilist/{aniListId}");
         }
 
-        path = source;
-        return true;
+        if (TryGetIdentifier(idSource, item, AniDbKeys, AniDbPathRegex(), out var aniDbId))
+        {
+            paths.Add($"anidb/{aniDbId}");
+        }
+
+        return paths;
     }
 
-    private static bool TryGetNumericProviderId(BaseItem item, string provider, out string itemId)
+    private static bool TryGetIdentifier(
+        BaseItem idSource,
+        BaseItem item,
+        string[] providerKeys,
+        Regex pathRegex,
+        out string identifier)
     {
-        if (item.ProviderIds.TryGetValue(provider, out var value)
-            && long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var numericId)
-            && numericId > 0)
+        if (TryGetNumericProviderId(idSource, providerKeys, out identifier))
         {
-            itemId = numericId.ToString(CultureInfo.InvariantCulture);
             return true;
+        }
+
+        if (!ReferenceEquals(idSource, item) && TryGetNumericProviderId(item, providerKeys, out identifier))
+        {
+            return true;
+        }
+
+        if (TryExtractIdFromPath(idSource.Path, pathRegex, out identifier))
+        {
+            return true;
+        }
+
+        if (!ReferenceEquals(idSource, item) && TryExtractIdFromPath(item.Path, pathRegex, out identifier))
+        {
+            return true;
+        }
+
+        identifier = string.Empty;
+        return false;
+    }
+
+    private static bool TryGetNumericProviderId(BaseItem item, string[] providerKeys, out string itemId)
+    {
+        foreach (var (key, value) in item.ProviderIds)
+        {
+            foreach (var providerKey in providerKeys)
+            {
+                if (string.Equals(key, providerKey, StringComparison.OrdinalIgnoreCase)
+                    && long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var numericId)
+                    && numericId > 0)
+                {
+                    itemId = numericId.ToString(CultureInfo.InvariantCulture);
+                    return true;
+                }
+            }
         }
 
         itemId = string.Empty;
         return false;
     }
+
+    private static bool TryExtractIdFromPath(string? path, Regex regex, out string itemId)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            var match = regex.Match(path);
+            if (match.Success
+                && long.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var numericId)
+                && numericId > 0)
+            {
+                itemId = numericId.ToString(CultureInfo.InvariantCulture);
+                return true;
+            }
+        }
+
+        itemId = string.Empty;
+        return false;
+    }
+
+    [GeneratedRegex(@"\[(?:tmdb|tmdbid)-(\d+)\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex TmdbPathRegex();
+
+    [GeneratedRegex(@"\[(?:mal|myanimelist)-(\d+)\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex MalPathRegex();
+
+    [GeneratedRegex(@"\[(?:anilist|anilistid|al)-(\d+)\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex AniListPathRegex();
+
+    [GeneratedRegex(@"\[(?:anidb|anidbid|aid)-(\d+)\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex AniDbPathRegex();
 
     private sealed record CachedMapping(GeckyzzMapping? Mapping, DateTimeOffset ExpiresAt);
 }

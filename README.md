@@ -6,7 +6,7 @@ A Jellyfin plugin that enriches your anime library with direct links to `https:/
 
 - **Multi-Platform Anime Database Links**: Automatically queries mappings powered by [nattadasu's AnimeAPI](https://animeapi.my.id) (and geckyzz-stored entries) to populate direct external links for platforms including AniList, MyAnimeList, AniDB, Kitsu, Anime-Planet, LiveChart, Annict, AniSearch, Shikimori, Simkl, and more.
 - **Direct Destination Links**: Links navigate directly to each respective platform matching AnimeAPI URL formats without external redirects.
-- **Flexible Identifier Lookup**: Resolves mappings using TMDB IDs, falling back to MyAnimeList IDs when TMDB metadata is unavailable.
+- **Flexible Identifier Lookup**: Resolves mappings using TMDB IDs, with fallback support for MyAnimeList (including `jellyfin-plugin-myanimelist` provider IDs and `[mal-<id>]` folder naming), AniList, and AniDB (from `jellyfin-meta-plugins` or folder tags).
 - **Fansub Release Detection**: Automatically routes geckyzz links to `/fsanime/` instead of `/anime/` when an item or its video filenames contain `CicakRumah` or `TokekHutan` release markers.
 
 ## Install
