@@ -86,13 +86,20 @@ public sealed class GeckyzzExternalUrlProvider : IExternalUrlProvider
             ? BuildPath(itemId, mediaType, seasonNumber)
             : mapping.GeckyzzPath;
 
-        if (item is Series && path.EndsWith("/season/1", StringComparison.Ordinal))
+        if (item is Series)
         {
-            path = path[..^"/season/1".Length];
+            path = StripTrailingSeason(path);
         }
 
         var pageType = HasFansubRelease(item) ? "fsanime" : "anime";
         return new[] { $"{BaseUrl}/{pageType}/{path}" };
+    }
+
+    private static string StripTrailingSeason(string path)
+    {
+        const string seasonSegment = "/season/";
+        var idx = path.LastIndexOf(seasonSegment, StringComparison.Ordinal);
+        return idx < 0 ? path : path[..idx];
     }
 
     private static string BuildPath(string itemId, string mediaType, int? seasonNumber)
