@@ -16,9 +16,6 @@ namespace Jellyfin.Plugin.Geckyzz;
 /// </summary>
 public sealed class GeckyzzExternalUrlProvider : IExternalUrlProvider
 {
-    private const string TmdbProviderId = "Tmdb";
-    private const string MyAnimeListProviderId = "MyAnimeList";
-    private const string AlternateMyAnimeListProviderId = "MAL";
     private const string BaseUrl = "https://geckyzz.my.id";
     private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -47,45 +44,18 @@ public sealed class GeckyzzExternalUrlProvider : IExternalUrlProvider
     /// <inheritdoc />
     public IEnumerable<string> GetExternalUrls(BaseItem item)
     {
-        string mediaType;
-        BaseItem idSource;
-        int? seasonNumber = null;
-
-        switch (item)
-        {
-            case Movie:
-                mediaType = "movie";
-                idSource = item;
-                break;
-            case Series:
-                mediaType = "tv";
-                idSource = item;
-                break;
-            case Season season:
-                mediaType = "tv";
-                idSource = (BaseItem?)season.Series ?? season;
-                seasonNumber = season.IndexNumber;
-                break;
-            default:
-                return Array.Empty<string>();
-        }
-
-        var hasItemId = TryGetId(idSource, out var itemId);
-        if (!hasItemId && !ReferenceEquals(idSource, item))
-        {
-            hasItemId = TryGetId(item, out itemId);
-        }
-
-        if (!hasItemId)
+        if (item is not (Movie or Series or Season))
         {
             return Array.Empty<string>();
         }
 
         var mapping = _mappingService.GetMapping(item);
-        var path = string.IsNullOrWhiteSpace(mapping?.GeckyzzPath)
-            ? BuildPath(itemId, mediaType, seasonNumber)
-            : mapping.GeckyzzPath;
+        if (string.IsNullOrWhiteSpace(mapping?.GeckyzzPath))
+        {
+            return Array.Empty<string>();
+        }
 
+        var path = mapping.GeckyzzPath;
         if (item is Series)
         {
             path = StripTrailingSeason(path);
@@ -100,42 +70,6 @@ public sealed class GeckyzzExternalUrlProvider : IExternalUrlProvider
         const string seasonSegment = "/season/";
         var idx = path.LastIndexOf(seasonSegment, StringComparison.Ordinal);
         return idx < 0 ? path : path[..idx];
-    }
-
-    private static string BuildPath(string itemId, string mediaType, int? seasonNumber)
-    {
-        var path = $"{mediaType}/{Uri.EscapeDataString(itemId)}";
-        if (seasonNumber is >= 0)
-        {
-            path += $"/season/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
-        }
-
-        return path;
-    }
-
-    private static bool TryGetId(BaseItem item, out string itemId)
-    {
-        if (TryGetNumericProviderId(item, TmdbProviderId, out itemId))
-        {
-            return true;
-        }
-
-        return TryGetNumericProviderId(item, MyAnimeListProviderId, out itemId)
-            || TryGetNumericProviderId(item, AlternateMyAnimeListProviderId, out itemId);
-    }
-
-    private static bool TryGetNumericProviderId(BaseItem item, string provider, out string itemId)
-    {
-        if (item.ProviderIds.TryGetValue(provider, out var value)
-            && long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var numericId)
-            && numericId > 0)
-        {
-            itemId = numericId.ToString(CultureInfo.InvariantCulture);
-            return true;
-        }
-
-        itemId = string.Empty;
-        return false;
     }
 
     private bool HasFansubRelease(BaseItem item)
