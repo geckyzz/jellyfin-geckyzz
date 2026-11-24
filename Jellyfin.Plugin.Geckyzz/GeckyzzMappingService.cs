@@ -141,7 +141,7 @@ public sealed partial class GeckyzzMappingService
             var tmdbPath = $"tmdb/{mediaType}/{tmdbId}";
             if (seasonNumber is >= 0)
             {
-                tmdbPath += $"/seasons/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
+                tmdbPath += $"/season/{seasonNumber.Value.ToString(CultureInfo.InvariantCulture)}";
             }
 
             paths.Add(tmdbPath);
