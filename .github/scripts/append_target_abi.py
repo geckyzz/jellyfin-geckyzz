@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Append targetAbi to the latest version entry in manifest.json."""
+from pathlib import Path
 import json
-import os
 import re
 import sys
 
-def get_target_abi(csproj_path):
+
+def get_target_abi(csproj_path: Path) -> str:
     """Read the Jellyfin.Controller package version and return targetAbi."""
-    with open(csproj_path) as f:
-        content = f.read()
+    content = csproj_path.read_text(encoding="utf-8")
     match = re.search(
         r'<PackageReference Include="Jellyfin\.Controller" Version="([^"]+)"', content
     )
@@ -21,15 +21,15 @@ def get_target_abi(csproj_path):
         parts.append("0")
     return ".".join(parts[:4])
 
-def main():
-    manifest_path = os.path.join(os.getcwd(), "manifest.json")
-    csproj_path = os.path.join(
-        os.getcwd(), "Jellyfin.Plugin.Geckyzz", "Jellyfin.Plugin.Geckyzz.csproj"
-    )
+
+def main() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    manifest_path = repo_root / "manifest.json"
+    csproj_path = repo_root / "Jellyfin.Plugin.Geckyzz" / "Jellyfin.Plugin.Geckyzz.csproj"
+
     target_abi = get_target_abi(csproj_path)
 
-    with open(manifest_path) as f:
-        manifest = json.load(f)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     plugin = manifest[0]
     versions = plugin.get("versions", [])
@@ -38,13 +38,14 @@ def main():
         plugin["versions"] = versions
 
     latest = versions[0]
+    if latest.get("targetAbi"):
+        print(f"targetAbi already set for version {latest.get('version')}: {latest['targetAbi']}")
+        return
+
     latest["targetAbi"] = target_abi
-
-    with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=2)
-        f.write("\n")
-
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(f"Appended targetAbi to manifest: {target_abi}")
+
 
 if __name__ == "__main__":
     main()
