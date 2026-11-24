@@ -71,7 +71,7 @@ public abstract class MappedExternalUrlProvider : IExternalUrlProvider
             return false;
         }
 
-        return _target is "imdb" or "simkl" or "themoviedb" or "thetvdb" or "trakt";
+        return _target is not "letterboxd";
     }
 
     private bool HasNativeExternalLink(BaseItem item)
