@@ -40,7 +40,7 @@ public abstract class MappedExternalUrlProvider : IExternalUrlProvider
     public string Name { get; }
 
     /// <inheritdoc />
-    public IEnumerable<string> GetExternalUrls(BaseItem item)
+    public virtual IEnumerable<string> GetExternalUrls(BaseItem item)
     {
         if (!IsAllowedForItem(item))
         {
@@ -308,9 +308,43 @@ public sealed class KitsuExternalUrlProvider : MappedExternalUrlProvider
 /// <summary>Provides Letterboxd links.</summary>
 public sealed class LetterboxdExternalUrlProvider : MappedExternalUrlProvider
 {
+    private readonly GeckyzzMappingService _mappingService;
+
     /// <summary>Initializes the provider.</summary>
     public LetterboxdExternalUrlProvider(GeckyzzMappingService service)
-        : base(service, "letterboxd", "Letterboxd", mapping => !string.IsNullOrWhiteSpace(mapping.LetterboxdSlug)) { }
+        : base(service, "letterboxd", "Letterboxd", mapping => !string.IsNullOrWhiteSpace(mapping.LetterboxdSlug))
+    {
+        _mappingService = service;
+    }
+
+    /// <inheritdoc />
+    public override IEnumerable<string> GetExternalUrls(BaseItem item)
+    {
+        if (item is not Movie)
+        {
+            return Array.Empty<string>();
+        }
+
+        var baseUrls = base.GetExternalUrls(item);
+        using var enumerator = baseUrls.GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            return new[] { enumerator.Current };
+        }
+
+        var mapping = _mappingService.GetMapping(item);
+        if (ProviderIdHelper.TryGetTmdbId(item, mapping, out var tmdbId))
+        {
+            return new[] { $"https://letterboxd.com/tmdb/{tmdbId}/" };
+        }
+
+        if (ProviderIdHelper.TryGetImdbId(item, mapping, out var imdbId))
+        {
+            return new[] { $"https://letterboxd.com/imdb/{imdbId}/" };
+        }
+
+        return Array.Empty<string>();
+    }
 }
 
 /// <summary>Provides LiveChart links.</summary>
