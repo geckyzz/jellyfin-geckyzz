@@ -69,6 +69,10 @@ jobs:
           export TAG VERSION DOWNLOAD_URL
           python3 .github/scripts/update_manifest.py
 
+      - name: Append targetAbi to manifest
+        run: |
+          python3 .github/scripts/append_target_abi.py
+
       - name: Commit and push manifest
         run: |
           git config user.name "geckyzz"
