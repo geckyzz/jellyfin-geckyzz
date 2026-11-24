@@ -27,5 +27,5 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>
     public override Guid Id => Guid.Parse("36bc6c0a-f85b-46c8-ae04-0d67a454d217");
 
     /// <inheritdoc />
-    public override string Description => "Adds links to anime pages on geckyzz.my.id.";
+    public override string Description => "Adds links to geckyzz and anime databases powered by nattadasu's AnimeAPI (https://animeapi.my.id) and geckyzz.";
 }

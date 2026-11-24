@@ -1,10 +1,13 @@
 # Jellyfin geckyzz
 
-A Jellyfin plugin that adds an external link to `https://geckyzz.my.id` for movies, series, and seasons. It uses the item's TMDB ID, falling back to a MyAnimeList ID when TMDB is unavailable. Season links include the season index.
+A Jellyfin plugin that enriches your anime library with direct links to `https://geckyzz.my.id` and a wide range of anime database platforms for movies, series, and seasons. Powered by [nattadasu's AnimeAPI](https://animeapi.my.id) with supplementary entries stored directly on geckyzz, it bridges your media with online tracking and metadata services.
 
-When an item or one of its video filenames contains `CicakRumah` or `TokekHutan`, the link uses the `/fsanime/` route instead of `/anime/`.
+## Features
 
-The plugin looks up geckyzz API mappings and adds direct links for available mapped platforms, following AnimeAPI's platform URL formats. Links go straight to each platform, without an AnimeAPI redirect. Simkl links are only added when an AniDB mapping is present.
+- **Multi-Platform Anime Database Links**: Automatically queries mappings powered by [nattadasu's AnimeAPI](https://animeapi.my.id) (and geckyzz-stored entries) to populate direct external links for platforms including AniList, MyAnimeList, AniDB, Kitsu, Anime-Planet, LiveChart, Annict, AniSearch, Shikimori, Simkl, and more.
+- **Direct Destination Links**: Links navigate directly to each respective platform matching AnimeAPI URL formats without external redirects.
+- **Flexible Identifier Lookup**: Resolves mappings using TMDB IDs, falling back to MyAnimeList IDs when TMDB metadata is unavailable.
+- **Fansub Release Detection**: Automatically routes geckyzz links to `/fsanime/` instead of `/anime/` when an item or its video filenames contain `CicakRumah` or `TokekHutan` release markers.
 
 ## Install
 
@@ -12,4 +15,4 @@ Add this plugin repository in Jellyfin:
 
 `https://raw.githubusercontent.com/geckyzz/jellyfin-geckyzz/main/manifest.json`
 
-The repository manifest will list installable versions after the first plugin release. Builds run on pushes and pull requests to `main`.
+The repository manifest lists installable versions after each plugin release. Builds run automatically on pushes and pull requests to `main`.
