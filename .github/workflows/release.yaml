@@ -67,11 +67,11 @@ jobs:
           FILENAME=$(basename "$ARTIFACT")
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
           export TAG VERSION DOWNLOAD_URL
-          python3 .github/scripts/update_manifest.py
+          pwsh -NoProfile -NonInteractive .github/scripts/update_manifest.ps1
 
       - name: Append targetAbi to manifest
         run: |
-          python3 .github/scripts/append_target_abi.py
+          pwsh -NoProfile -NonInteractive .github/scripts/append_target_abi.ps1
 
       - name: Commit and push manifest
         run: |
