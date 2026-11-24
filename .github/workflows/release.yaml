@@ -66,23 +66,8 @@ jobs:
           ARTIFACT="${{ steps.jprm.outputs.artifact }}"
           FILENAME=$(basename "$ARTIFACT")
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${FILENAME}"
-
-          python3 -c "
-import json
-manifest_path = 'manifest.json'
-with open(manifest_path) as f:
-    manifest = json.load(f)
-plugin = manifest[0]
-plugin['versions'] = [v for v in plugin['versions'] if v.get('version') != '${VERSION}']
-plugin['versions'].append({
-    'version': '${VERSION}',
-    'downloadUrl': '${DOWNLOAD_URL}'
-})
-plugin['versions'].sort(key=lambda v: [int(x) for x in v['version'].split('.')], reverse=True)
-with open(manifest_path, 'w') as f:
-    json.dump(manifest, f, indent=2)
-    f.write('\n')
-"
+          export TAG VERSION DOWNLOAD_URL
+          python3 .github/scripts/update_manifest.py
 
       - name: Commit and push manifest
         run: |
